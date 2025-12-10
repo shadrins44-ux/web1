@@ -1,43 +1,384 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="no-js">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ежедневник - Организация задач</title>
+    <meta name="description" content="Персональный ежедневник для эффективного управления задачами">
+    <meta name="keywords" content="ежедневник, задачи, планирование, организация, приоритеты">
+    <title>Smart Daily — Умный ежедневник для управления задачами</title>
+    
+    <!-- Open Graph для соцсетей -->
+    <meta property="og:title" content="Smart Daily — Умный ежедневник">
+    <meta property="og:description" content="Организуйте свои задачи эффективно">
+    <meta property="og:type" content="website">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
+    
+    <!-- Стили -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Предзагрузка шрифтов (если используются) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Атрибуты для доступности -->
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- Скрипт для определения JS -->
+    <script>
+        document.documentElement.classList.remove('no-js');
+        document.documentElement.classList.add('js');
+    </script>
 </head>
+
 <body>
-    <div class="container">
-        <header>
-            <h1>Мой Ежедневник</h1>
-            <p>Организуйте свои задачи эффективно</p>
-        </header>
-        
-        <section class="add-task-form">
-            <h2>Добавить новую задачу</h2>
-            <form id="taskForm">
-                <div class="form-group">
-                    <label for="taskTitle">Название задачи *</label>
-                    <input type="text" id="taskTitle" placeholder="Введите название задачи" required>
+    <!-- Скип-ссылка для доступности -->
+    <a href="#main-content" class="skip-link">Перейти к основному содержимому</a>
+    
+    <!-- Шапка -->
+    <header class="site-header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-wrapper">
+                    <h1 class="site-title">
+                        <span class="logo-emoji" aria-hidden="true">📝</span>
+                        Smart Daily
+                    </h1>
+                    <p class="site-subtitle">Умный планировщик задач</p>
                 </div>
-                <div class="form-group">
-                    <label for="taskDescription">Описание</label>
-                    <textarea id="taskDescription" placeholder="Введите описание задачи (необязательно)"></textarea>
-                </div>
-                <button type="submit" class="btn">Добавить задачу</button>
-            </form>
-        </section>
-        
-        <section class="tasks-section">
-            <h2>Мои задачи</h2>
-            <div class="tasks-container" id="tasksContainer">
-                <div class="empty-state" id="emptyState">
-                    <p>У вас пока нет задач. Добавьте первую задачу!</p>
+                
+                <div class="header-info" role="status" aria-live="polite">
+                    <span class="current-date" id="currentDate"></span>
+                    <span class="task-summary" id="taskSummary">Загрузка...</span>
                 </div>
             </div>
-        </section>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main id="main-content" class="main-content" tabindex="-1">
+        <div class="container">
+            <div class="app-layout">
+                <!-- Блок добавления задачи -->
+                <section class="task-creation" aria-labelledby="add-task-heading">
+                    <div class="section-header">
+                        <h2 id="add-task-heading" class="section-title">
+                            <span class="icon" aria-hidden="true">➕</span>
+                            Новая задача
+                        </h2>
+                        <p class="section-description">Добавьте задачу с описанием и приоритетом</p>
+                    </div>
+                    
+                    <form id="addTaskForm" class="task-form" novalidate>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="taskTitle" class="form-label">
+                                    Название задачи
+                                    <span class="required-indicator" aria-hidden="true">*</span>
+                                    <span class="sr-only">обязательное поле</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="taskTitle" 
+                                    class="form-control" 
+                                    placeholder="Например: Подготовить отчёт за квартал" 
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="titleHelp"
+                                    autocomplete="off"
+                                    maxlength="100"
+                                >
+                                <div id="titleHelp" class="form-hint">Максимум 100 символов</div>
+                                <div class="form-error" id="titleError" role="alert" aria-live="assertive"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="taskDescription" class="form-label">Описание задачи</label>
+                                <textarea 
+                                    id="taskDescription" 
+                                    class="form-control" 
+                                    placeholder="Детали, сроки, дополнительные пометки..."
+                                    rows="3"
+                                    maxlength="500"
+                                    aria-describedby="descriptionHelp"
+                                ></textarea>
+                                <div id="descriptionHelp" class="form-hint">Максимум 500 символов</div>
+                                <div class="char-counter" id="descriptionCounter">
+                                    <span class="current">0</span>/<span class="max">500</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="taskPriority" class="form-label">Приоритет выполнения</label>
+                                <div class="priority-selector">
+                                    <div class="priority-options" role="radiogroup" aria-labelledby="priority-label">
+                                        <input 
+                                            type="radio" 
+                                            id="priority-low" 
+                                            name="priority" 
+                                            value="low" 
+                                            class="priority-input sr-only"
+                                        >
+                                        <label for="priority-low" class="priority-label priority-low" tabindex="0">
+                                            <span class="priority-icon" aria-hidden="true">🟢</span>
+                                            Низкий
+                                        </label>
+                                        
+                                        <input 
+                                            type="radio" 
+                                            id="priority-medium" 
+                                            name="priority" 
+                                            value="medium" 
+                                            class="priority-input sr-only"
+                                            checked
+                                        >
+                                        <label for="priority-medium" class="priority-label priority-medium" tabindex="0">
+                                            <span class="priority-icon" aria-hidden="true">🟡</span>
+                                            Средний
+                                        </label>
+                                        
+                                        <input 
+                                            type="radio" 
+                                            id="priority-high" 
+                                            name="priority" 
+                                            value="high" 
+                                            class="priority-input sr-only"
+                                        >
+                                        <label for="priority-high" class="priority-label priority-high" tabindex="0">
+                                            <span class="priority-icon" aria-hidden="true">🔴</span>
+                                            Высокий
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="priority-help" id="priorityHelp">
+                                    <span class="priority-example priority-low">Низкий — выполнить когда будет время</span>
+                                    <span class="priority-example priority-medium">Средний — выполнить в течение недели</span>
+                                    <span class="priority-example priority-high">Высокий — выполнить в первую очередь</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <span class="btn-icon" aria-hidden="true">➕</span>
+                                    Добавить задачу
+                                </button>
+                                <button type="reset" class="btn btn-secondary" id="resetForm">
+                                    <span class="btn-icon" aria-hidden="true">🗑️</span>
+                                    Очистить форму
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Блок списка задач -->
+                <section class="task-list" aria-labelledby="tasks-heading">
+                    <div class="section-header">
+                        <div class="section-title-wrapper">
+                            <h2 id="tasks-heading" class="section-title">
+                                <span class="icon" aria-hidden="true">📋</span>
+                                Мои задачи
+                            </h2>
+                            <div class="tasks-stats">
+                                <span class="tasks-count" id="taskCount">
+                                    <span class="count-number">0</span>
+                                    <span class="count-label">задач</span>
+                                </span>
+                                <div class="priority-stats" id="priorityStats" aria-live="polite">
+                                    <span class="stat-item stat-high" title="Высокий приоритет">0</span>
+                                    <span class="stat-item stat-medium" title="Средний приоритет">0</span>
+                                    <span class="stat-item stat-low" title="Низкий приоритет">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-controls">
+                            <button class="btn btn-secondary btn-sm" id="clearAllBtn" disabled>
+                                <span class="btn-icon" aria-hidden="true">🗑️</span>
+                                Очистить все
+                            </button>
+                            <div class="view-controls">
+                                <button class="view-btn active" id="viewAll" aria-label="Показать все задачи">
+                                    Все
+                                </button>
+                                <button class="view-btn" id="viewHigh" aria-label="Показать задачи высокого приоритета">
+                                    Высокие
+                                </button>
+                                <button class="view-btn" id="viewMedium" aria-label="Показать задачи среднего приоритета">
+                                    Средние
+                                </button>
+                                <button class="view-btn" id="viewLow" aria-label="Показать задачи низкого приоритета">
+                                    Низкие
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Контейнер для задач -->
+                    <div class="tasks-container" id="tasksList" role="list" aria-label="Список задач">
+                        <!-- Пустое состояние -->
+                        <div class="empty-state" id="emptyState" role="status" aria-live="polite">
+                            <div class="empty-state-icon" aria-hidden="true">🎯</div>
+                            <h3 class="empty-state-title">Список задач пуст</h3>
+                            <p class="empty-state-description">
+                                Добавьте свою первую задачу, чтобы начать планировать день
+                            </p>
+                            <div class="empty-state-actions">
+                                <button class="btn btn-primary" id="addFirstTask">
+                                    <span class="btn-icon" aria-hidden="true">➕</span>
+                                    Добавить первую задачу
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаблон задачи (используется в JS) -->
+                        <template id="taskTemplate">
+                            <div class="task-card" role="listitem">
+                                <div class="task-card-header">
+                                    <div class="task-main-info">
+                                        <h3 class="task-title"></h3>
+                                        <div class="task-meta">
+                                            <span class="task-date"></span>
+                                            <span class="task-id"></span>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions">
+                                        <button class="btn-icon toggle-complete" aria-label="Отметить как выполненное">
+                                            <span class="icon" aria-hidden="true">✓</span>
+                                        </button>
+                                        <button class="btn-icon edit-task" aria-label="Редактировать задачу">
+                                            <span class="icon" aria-hidden="true">✏️</span>
+                                        </button>
+                                        <button class="btn-icon delete-task" aria-label="Удалить задачу">
+                                            <span class="icon" aria-hidden="true">🗑️</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="task-card-body">
+                                    <p class="task-description"></p>
+                                </div>
+                                
+                                <div class="task-card-footer">
+                                    <div class="task-priority">
+                                        <span class="priority-badge"></span>
+                                    </div>
+                                    <div class="task-status">
+                                        <span class="status-label">В работе</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Пагинация (если нужно) -->
+                    <div class="pagination" id="pagination" aria-label="Навигация по страницам задач" hidden>
+                        <button class="pagination-btn prev" disabled>
+                            <span class="btn-icon" aria-hidden="true">←</span>
+                            Назад
+                        </button>
+                        <span class="pagination-info" id="pageInfo">Страница 1 из 1</span>
+                        <button class="pagination-btn next" disabled>
+                            Вперёд
+                            <span class="btn-icon" aria-hidden="true">→</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p class="footer-title">Smart Daily</p>
+                    <p class="footer-subtitle">Ваш личный помощник в планировании</p>
+                </div>
+                
+                <div class="footer-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTasksCreated">0</span>
+                        <span class="stat-label">всего задач</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="tasksCompleted">0</span>
+                        <span class="stat-label">выполнено</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="productivityScore">0%</span>
+                        <span class="stat-label">продуктивность</span>
+                    </div>
+                </div>
+                
+                <div class="footer-actions">
+                    <button class="btn btn-text" id="exportTasks" aria-label="Экспорт задач">
+                        <span class="btn-icon" aria-hidden="true">📤</span>
+                        Экспорт
+                    </button>
+                    <button class="btn btn-text" id="importTasks" aria-label="Импорт задач">
+                        <span class="btn-icon" aria-hidden="true">📥</span>
+                        Импорт
+                    </button>
+                    <button class="btn btn-text" id="backupTasks" aria-label="Создать резервную копию">
+                        <span class="btn-icon" aria-hidden="true">💾</span>
+                        Резервная копия
+                    </button>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p class="copyright">
+                    © <span id="currentYear">2024</span> Smart Daily. Все права защищены.
+                    <span class="version" id="appVersion">v1.0.0</span>
+                </p>
+                <div class="footer-links">
+                    <a href="#privacy" class="footer-link">Конфиденциальность</a>
+                    <a href="#terms" class="footer-link">Условия использования</a>
+                    <a href="#help" class="footer-link">Помощь</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна и уведомления -->
+    <div class="modal-overlay" id="modalOverlay" hidden aria-hidden="true">
+        <div class="modal" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <h3 id="modalTitle" class="modal-title"></h3>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modalCancel">Отмена</button>
+                <button class="btn btn-primary" id="modalConfirm">Подтвердить</button>
+            </div>
+        </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Область для уведомлений -->
+    <div class="notifications-container" id="notifications" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Подключение скриптов -->
+    <script src="script.js" defer></script>
+    <script src="utils.js" defer></script>
+    
+    <!-- Инициализация при загрузке -->
+    <script>
+        // Устанавливаем текущий год в футере
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Устанавливаем текущую дату в шапке
+        const formatDate = (date) => {
+            return date.toLocaleDateString('ru-RU', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        };
+        document.getElementById('currentDate').textContent = formatDate(new Date());
+    </script>
 </body>
 </html>
